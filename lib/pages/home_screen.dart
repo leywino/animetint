@@ -1,9 +1,10 @@
+import 'dart:io';
+
 import 'package:anime_tint/controller/settings_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-import 'package:restart_app/restart_app.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -42,11 +43,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _toggleOverlay(bool isEnabled) async {
     if (isEnabled) {
       FlutterOverlayWindow.showOverlay(
+        height: 3000,
+        width: WindowSize.fullCover,
         flag: OverlayFlag.clickThrough,
         overlayTitle: "AnimeTint",
         overlayContent: "Overlay Running...",
         enableDrag: false,
-        positionGravity: PositionGravity.auto,
         visibility: NotificationVisibility.visibilityPublic,
         alignment: OverlayAlignment.bottomCenter,
       );
@@ -55,8 +57,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _restartApp() {
-    Restart.restartApp();
+  void _restartApp(SettingsProvider settingsProvider) {
+    settingsProvider.useOverlay = false;
+    exit(0);
   }
 
   @override
@@ -94,10 +97,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 Padding(
                   padding: const EdgeInsets.only(top: 20),
                   child: ElevatedButton(
-                    onPressed: _restartApp,
+                    onPressed: () {
+                      _restartApp(settingsProvider);
+                    },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -161,7 +164,7 @@ class _HomeScreenState extends State<HomeScreen> {
           value: settingsProvider.tintIntensity,
           min: 0.0,
           max: 1.0,
-          divisions: 10,
+          divisions: 100,
           label: "${(settingsProvider.tintIntensity * 100).toInt()}%",
           onChanged: (value) {
             settingsProvider.tintIntensity = value;
@@ -184,7 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
           value: settingsProvider.noiseIntensity,
           min: 0.0,
           max: 1.0,
-          divisions: 10,
+          divisions: 100,
           label: "${(settingsProvider.noiseIntensity * 100).toInt()}%",
           onChanged: (value) {
             settingsProvider.noiseIntensity = value;
