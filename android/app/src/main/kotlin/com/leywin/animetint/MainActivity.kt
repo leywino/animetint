@@ -1,4 +1,4 @@
-package com.leywin.anime_tint
+package com.leywin.animetint
 
 import io.flutter.embedding.android.FlutterActivity
 

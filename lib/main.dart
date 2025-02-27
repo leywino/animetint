@@ -1,20 +1,67 @@
+import 'dart:developer';
+import 'package:anime_tint/components/overlay.dart';
+import 'package:anime_tint/pages/home_screen.dart';
+import 'package:anime_tint/controller/settings_provider.dart';
+import 'package:anime_tint/pages/permissions_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-void main() {
-  runApp(const MainApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final prefs = await SharedPreferences.getInstance();
+  final firstLaunchCompleted = prefs.getBool("first_launch_completed") ?? false;
+
+  runApp(MyApp(prefs: prefs, firstLaunchCompleted: firstLaunchCompleted));
 }
 
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+class MyApp extends StatelessWidget {
+  final SharedPreferences prefs;
+  final bool firstLaunchCompleted;
+
+  const MyApp({
+    super.key,
+    required this.prefs,
+    required this.firstLaunchCompleted,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Text('Hello World!'),
-        ),
+    return ChangeNotifierProvider(
+      create: (context) => SettingsProvider(prefs),
+      child: Consumer<SettingsProvider>(
+        builder: (context, settingsProvider, child) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            themeMode: ThemeMode.values[settingsProvider.theme.index],
+            darkTheme: ThemeData.dark(useMaterial3: true),
+            theme: ThemeData.light(useMaterial3: true),
+            home:
+                firstLaunchCompleted
+                    ? const HomeScreen()
+                    : const PermissionScreen(),
+          );
+        },
       ),
     );
   }
+}
+
+@pragma("vm:entry-point")
+void overlayMain() async {
+  log("✅ Overlay Entry Point Reached");
+
+  WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPreferences.getInstance();
+
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => SettingsProvider(prefs),
+      child: const MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: OverlayScreen(),
+      ),
+    ),
+  );
 }
