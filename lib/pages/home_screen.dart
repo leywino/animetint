@@ -17,17 +17,24 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _overlayGranted = false;
   bool _batteryGranted = false;
   bool _settingsChanged = false;
+  bool _isOverlayActive = false;
 
   @override
   void initState() {
     super.initState();
     _checkPermissions();
+    _fetchOverlayStatus();
   }
 
   Future<void> _checkPermissions() async {
     _overlayGranted = await Permission.systemAlertWindow.isGranted;
     _batteryGranted = await Permission.ignoreBatteryOptimizations.isGranted;
     setState(() {});
+  }
+
+  Future<void> _fetchOverlayStatus() async {
+    bool isActive = await FlutterOverlayWindow.isActive();
+    setState(() => _isOverlayActive = isActive);
   }
 
   Future<void> _requestOverlayPermission() async {
@@ -42,7 +49,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _toggleOverlay(bool isEnabled) async {
     if (isEnabled) {
-      FlutterOverlayWindow.showOverlay(
+      await FlutterOverlayWindow.showOverlay(
         height: 3000,
         width: WindowSize.fullCover,
         flag: OverlayFlag.clickThrough,
@@ -53,12 +60,14 @@ class _HomeScreenState extends State<HomeScreen> {
         alignment: OverlayAlignment.bottomCenter,
       );
     } else {
-      FlutterOverlayWindow.closeOverlay();
+      await FlutterOverlayWindow.closeOverlay();
     }
+    setState(() => _isOverlayActive = isEnabled);
   }
 
-  void _restartApp(SettingsProvider settingsProvider) {
-    settingsProvider.useOverlay = false;
+  void _restartApp(SettingsProvider settingsProvider) async {
+    _toggleOverlay(false);
+    await Future.delayed(Duration(milliseconds: 500));
     exit(0);
   }
 
@@ -71,11 +80,8 @@ class _HomeScreenState extends State<HomeScreen> {
             title: const Text("AnimeTint"),
             actions: [
               Switch(
-                value: settingsProvider.useOverlay,
-                onChanged: (value) {
-                  settingsProvider.useOverlay = value;
-                  _toggleOverlay(value);
-                },
+                value: _isOverlayActive,
+                onChanged: (value) => _toggleOverlay(value),
               ),
             ],
           ),

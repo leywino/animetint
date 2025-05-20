@@ -36,15 +36,6 @@ class SettingsProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  bool get useOverlay {
-    return prefs?.getBool("use_overlay") ?? false;
-  }
-
-  set useOverlay(bool enable) {
-    prefs?.setBool('use_overlay', enable);
-    notifyListeners();
-  }
-
   ThemeSettings get theme {
     return ThemeSettings.values[prefs?.getInt('theme') ??
         ThemeSettings.system.index];
