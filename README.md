@@ -16,7 +16,7 @@ I created AnimeTint because I loved this experience on my tablet and wanted to e
 | Without AnimeTint | With AnimeTint |
 |-------------------|----------------|
 | ![Without](.github/readme_images/without_animetint1.png) | ![With](.github/readme_images/with_animetint1.png) |
-| ![Without 2](.github/readme_images/without_animetint2.png) | ![With 2](.github/readme_images/with_animetint2.png) |
+| ![Without 2](.github/readme_images/without_animetint2.jpg) | ![With 2](.github/readme_images/with_animetint2.jpg) |
 
 > 📸 Tip: Use warm tint + medium noise for the best anime-watching experience.
 
