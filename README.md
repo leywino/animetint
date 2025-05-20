@@ -4,6 +4,8 @@ AnimeTint is a small Android utility that replicates the immersive "Reading Mode
 
 I created AnimeTint because I loved this experience on my tablet and wanted to enjoy the same visual vibe on my phone too.
 
+> ⚠️ This app is still in development. Features and performance may change as it evolves.
+
 ## ✨ Features
 
 - 🎨 Tint Color – Choose from multiple preset tint colors.
