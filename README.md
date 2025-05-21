@@ -24,7 +24,7 @@ I created AnimeTint because I loved this experience on my tablet and wanted to e
 
 ## ⬇️ Download
 
-You can download the latest release [here](https://github.com/leywino/animetint/releases).
+You can download the latest release [here](https://github.com/leywino/anime_tint/releases).
 
 ## 📃 License
 
