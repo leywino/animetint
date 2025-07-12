@@ -1,8 +1,8 @@
 import 'dart:developer';
-import 'package:anime_tint/components/overlay.dart';
-import 'package:anime_tint/pages/home_screen.dart';
-import 'package:anime_tint/controller/settings_provider.dart';
-import 'package:anime_tint/pages/permissions_screen.dart';
+import 'package:animetint/components/overlay.dart';
+import 'package:animetint/pages/home_screen.dart';
+import 'package:animetint/controller/settings_provider.dart';
+import 'package:animetint/pages/permissions_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';

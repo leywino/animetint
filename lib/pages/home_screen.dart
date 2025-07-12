@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:anime_tint/controller/settings_provider.dart';
+import 'package:animetint/controller/settings_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 import 'package:permission_handler/permission_handler.dart';

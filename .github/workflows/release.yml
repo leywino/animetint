@@ -53,7 +53,7 @@ jobs:
       - name: 🏷️ Rename APKs to match naming convention
         run: |
           VERSION=${{ steps.version.outputs.version }}
-          APP_NAME="anime_tint"
+          APP_NAME="animetint"
 
           mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk $APP_NAME-arm64-v8a-v$VERSION.apk
           mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk $APP_NAME-armeabi-v7a-v$VERSION.apk
@@ -67,10 +67,10 @@ jobs:
           tag_name: v${{ steps.version.outputs.version }}
           name: Release v${{ steps.version.outputs.version }}
           files: |
-            anime_tint-arm64-v8a-v${{ steps.version.outputs.version }}.apk
-            anime_tint-armeabi-v7a-v${{ steps.version.outputs.version }}.apk
-            anime_tint-x86_64-v${{ steps.version.outputs.version }}.apk
-            anime_tint-x86-v${{ steps.version.outputs.version }}.apk
-            anime_tint-v${{ steps.version.outputs.version }}.apk
+            animetint-arm64-v8a-v${{ steps.version.outputs.version }}.apk
+            animetint-armeabi-v7a-v${{ steps.version.outputs.version }}.apk
+            animetint-x86_64-v${{ steps.version.outputs.version }}.apk
+            animetint-x86-v${{ steps.version.outputs.version }}.apk
+            animetint-v${{ steps.version.outputs.version }}.apk
         env:
           GITHUB_TOKEN: ${{ secrets.TOKEN }}

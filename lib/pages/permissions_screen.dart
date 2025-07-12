@@ -1,4 +1,4 @@
-import 'package:anime_tint/pages/home_screen.dart';
+import 'package:animetint/pages/home_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -51,25 +51,26 @@ class _PermissionScreenState extends State<PermissionScreen> {
   void _openAppSettingsDialog(String permissionName) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text("$permissionName Required"),
-        content: Text(
-          "To enable $permissionName, please open settings and grant the required permission.",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
+      builder:
+          (context) => AlertDialog(
+            title: Text("$permissionName Required"),
+            content: Text(
+              "To enable $permissionName, please open settings and grant the required permission.",
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Cancel"),
+              ),
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  await openAppSettings();
+                },
+                child: const Text("Open Settings"),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              await openAppSettings();
-            },
-            child: const Text("Open Settings"),
-          ),
-        ],
-      ),
     );
   }
 
@@ -96,15 +97,17 @@ class _PermissionScreenState extends State<PermissionScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.settings_rounded,
-                size: 50, color: Theme.of(context).colorScheme.primary),
+            Icon(
+              Icons.settings_rounded,
+              size: 50,
+              color: Theme.of(context).colorScheme.primary,
+            ),
             const SizedBox(height: 16),
             Text(
               "Permissions Required",
-              style: Theme.of(context)
-                  .textTheme
-                  .headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Text(
@@ -184,14 +187,20 @@ class _PermissionScreenState extends State<PermissionScreen> {
 
   /// **Build Permission Tile**
   Widget _buildPermissionTile(
-      String title, String description, bool isGranted, VoidCallback onPressed) {
+    String title,
+    String description,
+    bool isGranted,
+    VoidCallback onPressed,
+  ) {
     return ListTile(
       title: Text(title),
       subtitle: Text(description),
       trailing: ElevatedButton(
         onPressed: isGranted ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
         child: Text(isGranted ? "Granted" : "Grant"),
       ),
