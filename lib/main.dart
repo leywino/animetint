@@ -3,7 +3,7 @@ import 'package:animetint/components/overlay.dart';
 import 'package:animetint/pages/home_screen.dart';
 import 'package:animetint/controller/settings_provider.dart';
 import 'package:animetint/pages/permissions_screen.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -33,14 +33,12 @@ class MyApp extends StatelessWidget {
       child: Consumer<SettingsProvider>(
         builder: (context, settingsProvider, child) {
           return MaterialApp(
+            title: 'AnimeTint',
             debugShowCheckedModeBanner: false,
             themeMode: ThemeMode.values[settingsProvider.theme.index],
             darkTheme: ThemeData.dark(useMaterial3: true),
             theme: ThemeData.light(useMaterial3: true),
-            home:
-                firstLaunchCompleted
-                    ? const HomeScreen()
-                    : const PermissionScreen(),
+            home: firstLaunchCompleted ? const HomeScreen() : const PermissionScreen(),
           );
         },
       ),
