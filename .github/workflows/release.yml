@@ -1,9 +1,13 @@
-name: Release APK on Tag
+
+name: Release APK
 
 on:
   push:
     branches:
       - main
+
+permissions:
+  contents: write
 
 jobs:
   build-release:
@@ -11,66 +15,94 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: 🔧 Set up Flutter
+      - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.32.1'
+          flutter-version: '3.50.0'
+          channel: stable
+          cache: true
 
-      - name: 🔄 Get dependencies
+      - name: Get dependencies
         run: flutter pub get
 
-      - name: 🔐 Decode keystore
-        run: |
-          mkdir -p android/app/keystore
-          echo "$KEYSTORE_BASE64" | base64 -d > android/app/keystore/release-key.jks
+      - name: Decode keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-
-      - name: 📝 Create key.properties
         run: |
-          cat <<EOF > android/key.properties
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::KEYSTORE_BASE64 secret is missing."
+            exit 1
+          fi
+
+          mkdir -p android/app/keystore
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode \
+            > android/app/keystore/release-key.jks
+
+      - name: Create key.properties
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          cat > android/key.properties <<EOF
           storeFile=keystore/release-key.jks
-          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
-          keyAlias=${{ secrets.KEY_ALIAS }}
-          keyPassword=${{ secrets.KEY_PASSWORD }}
+          storePassword=$KEYSTORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          keyPassword=$KEY_PASSWORD
           EOF
 
-      - name: 📦 Build APKs (all architectures)
+      - name: Build APKs (all architectures)
         run: flutter build apk --split-per-abi
 
-      - name: 📦 Build Universal APK (for confused individuals)
-        run: flutter build apk --target-platform android-arm,android-arm64,android-x64 --split-debug-info=build/symbols
+      - name: Build Universal APK
+        run: |
+          flutter build apk \
+            --target-platform android-arm,android-arm64,android-x64 \
+            --split-debug-info=build/symbols
 
-      - name: 🔍 Get tag/version from commit message
+      - name: Extract release version
         id: version
         run: |
-          VERSION=$(echo "${{ github.event.head_commit.message }}" | grep -oP 'release v\K[0-9]+\.[0-9]+\.[0-9]+')
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          VERSION=$(printf '%s' "$COMMIT_MESSAGE" | grep -oP 'release v\K[0-9]+\.[0-9]+\.[0-9]+' || true)
 
-      - name: 🏷️ Rename APKs to match naming convention
+          if [ -z "$VERSION" ]; then
+            echo "::error::Could not extract release version from commit message."
+            exit 1
+          fi
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Release version: $VERSION"
+        env:
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+
+      - name: Rename APKs
         run: |
-          VERSION=${{ steps.version.outputs.version }}
+          VERSION="${{ steps.version.outputs.version }}"
           APP_NAME="animetint"
 
-          mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk $APP_NAME-arm64-v8a-v$VERSION.apk
-          mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk $APP_NAME-armeabi-v7a-v$VERSION.apk
-          mv build/app/outputs/flutter-apk/app-x86_64-release.apk $APP_NAME-x86_64-v$VERSION.apk
-          mv build/app/outputs/flutter-apk/app-x86-release.apk $APP_NAME-x86-v$VERSION.apk || true
-          mv build/app/outputs/flutter-apk/app-release.apk $APP_NAME-v$VERSION.apk
+          mv build/app/outputs/flutter-apk/app-arm64-v8a-release.apk \
+            "$APP_NAME-arm64-v8a-v$VERSION.apk"
 
-      - name: 🚀 Create GitHub Release
-        uses: softprops/action-gh-release@v1
+          mv build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk \
+            "$APP_NAME-armeabi-v7a-v$VERSION.apk"
+
+          mv build/app/outputs/flutter-apk/app-x86_64-release.apk \
+            "$APP_NAME-x86_64-v$VERSION.apk"
+
+          mv build/app/outputs/flutter-apk/app-release.apk \
+            "$APP_NAME-v$VERSION.apk"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
           name: Release v${{ steps.version.outputs.version }}
+          generate_release_notes: true
           files: |
             animetint-arm64-v8a-v${{ steps.version.outputs.version }}.apk
             animetint-armeabi-v7a-v${{ steps.version.outputs.version }}.apk
             animetint-x86_64-v${{ steps.version.outputs.version }}.apk
-            animetint-x86-v${{ steps.version.outputs.version }}.apk
             animetint-v${{ steps.version.outputs.version }}.apk
-        env:
-          GITHUB_TOKEN: ${{ secrets.TOKEN }}
