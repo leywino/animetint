@@ -28,6 +28,8 @@ dev_dependencies:
 flutter_launcher_icons:
   android: "launcher_icon"
   image_path: "kanji.png"
+  adaptive_icon_background: "#56595B"
+  adaptive_icon_foreground: "kanji.png"
 
 flutter:
   uses-material-design: true
