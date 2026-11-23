@@ -3,10 +3,10 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:animetint/components/film_grain_painter.dart';
 import 'package:animetint/controller/settings_provider.dart';
+import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 
 class OverlayScreen extends StatefulWidget {
   const OverlayScreen({super.key});

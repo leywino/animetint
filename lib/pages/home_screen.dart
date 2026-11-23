@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:animetint/components/film_grain_painter.dart';
 import 'package:animetint/controller/settings_provider.dart';
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -29,7 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _toggleOverlay(bool isEnabled, SettingsProvider provider) async {
     if (isEnabled) {
       await FlutterOverlayWindow.showOverlay(
-        height: WindowSize.matchParent,
+        height: WindowSize.fullCover,
         width: WindowSize.matchParent,
         flag: OverlayFlag.clickThrough,
         overlayTitle: "AnimeTint",
