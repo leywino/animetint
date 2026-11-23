@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:animetint/components/film_grain_painter.dart';
 import 'package:animetint/controller/settings_provider.dart';
+import 'package:animetint/models/filter_preset.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:provider/provider.dart';
@@ -90,9 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 20),
 
           // 2. Curated Presets
-          _buildSectionHeader("Presets"),
-          const SizedBox(height: 8),
-          _buildPresetsRow(settings),
+          _buildPresetsSection(settings),
           const SizedBox(height: 24),
 
           // 3. Color Grading Controls
@@ -204,7 +203,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             // Tint Layer
             Container(
-              color: settings.tintColor.withValues(alpha: settings.tintIntensity),
+              color: settings.tintColor.withValues(
+                alpha: settings.tintIntensity,
+              ),
             ),
             // Grain Layer
             ProceduralFilmGrain(
@@ -243,67 +244,265 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildPresetsRow(SettingsProvider provider) {
-    final presets = [
-      {
-        "name": "90s Cel Anime",
-        "color": const Color(0xFFFFCA28),
-        "tint": 0.12,
-        "noise": 0.14,
-        "scale": 1.2,
-      },
-      {
-        "name": "Warm Manga",
-        "color": const Color(0xFFFFB74D),
-        "tint": 0.22,
-        "noise": 0.08,
-        "scale": 0.8,
-      },
-      {
-        "name": "VHS Retro",
-        "color": const Color(0xFF4DD0E1),
-        "tint": 0.10,
-        "noise": 0.22,
-        "scale": 1.8,
-      },
-      {
-        "name": "OLED Night",
-        "color": const Color(0xFF121212),
-        "tint": 0.45,
-        "noise": 0.04,
-        "scale": 1.0,
-      },
-      {
-        "name": "Sunset Lo-Fi",
-        "color": const Color(0xFFFF7043),
-        "tint": 0.18,
-        "noise": 0.12,
-        "scale": 1.1,
-      },
-    ];
-
-    return SizedBox(
-      height: 42,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: presets.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final p = presets[index];
-          final color = p['color'] as Color;
-          return ActionChip(
-            avatar: CircleAvatar(backgroundColor: color, radius: 10),
-            label: Text(p['name'] as String),
-            onPressed: () {
-              provider.tintColor = color;
-              provider.tintIntensity = p['tint'] as double;
-              provider.noiseIntensity = p['noise'] as double;
-              provider.grainScale = p['scale'] as double;
-            },
-          );
-        },
-      ),
+  Widget _buildPresetsSection(SettingsProvider provider) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader('Presets'),
+        const SizedBox(height: 12),
+        Text('Built-in presets', style: Theme.of(context).textTheme.titleSmall),
+        const SizedBox(height: 6),
+        Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          children:
+              FilterPreset.builtIns.map((preset) {
+                return ActionChip(
+                  avatar: _presetColorDot(preset.color),
+                  label: Text(preset.name),
+                  onPressed: () async => provider.applyPreset(preset),
+                );
+              }).toList(),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'My presets',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+            ),
+            TextButton.icon(
+              onPressed: () => _savePreset(provider),
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Save current'),
+            ),
+          ],
+        ),
+        if (provider.customPresets.isEmpty)
+          Card(
+            elevation: 0,
+            color: Theme.of(
+              context,
+            ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.35),
+            child: const Padding(
+              padding: EdgeInsets.all(14),
+              child: Row(
+                children: [
+                  Icon(Icons.bookmark_add_outlined),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text('Save your current filter to find it here.'),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            children:
+                provider.customPresets.map((preset) {
+                  return Card(
+                    elevation: 0,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.secondaryContainer.withValues(alpha: 0.55),
+                    shape: const StadiumBorder(),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextButton.icon(
+                          onPressed: () async => provider.applyPreset(preset),
+                          icon: _presetColorDot(preset.color),
+                          label: Text(preset.name),
+                        ),
+                        PopupMenuButton<String>(
+                          tooltip: 'Manage ${preset.name}',
+                          iconSize: 20,
+                          onSelected:
+                              (action) =>
+                                  _managePreset(provider, preset, action),
+                          itemBuilder:
+                              (_) => const [
+                                PopupMenuItem(
+                                  value: 'apply',
+                                  child: Text('Apply'),
+                                ),
+                                PopupMenuItem(
+                                  value: 'update',
+                                  child: Text('Update from current settings'),
+                                ),
+                                PopupMenuItem(
+                                  value: 'rename',
+                                  child: Text('Rename'),
+                                ),
+                                PopupMenuItem(
+                                  value: 'delete',
+                                  child: Text('Delete'),
+                                ),
+                              ],
+                        ),
+                        const SizedBox(width: 4),
+                      ],
+                    ),
+                  );
+                }).toList(),
+          ),
+      ],
     );
+  }
+
+  Widget _presetColorDot(Color color) => CircleAvatar(
+    backgroundColor: color,
+    radius: 9,
+    child: Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.black26),
+      ),
+    ),
+  );
+
+  Future<void> _savePreset(SettingsProvider provider) async {
+    final name = await _showPresetNameDialog(provider, title: 'Save preset');
+    if (name == null) return;
+    final preset = await provider.saveCurrentAsPreset(name);
+    if (preset != null && mounted) {
+      _showPresetMessage('Saved “${preset.name}”.');
+    }
+  }
+
+  Future<void> _managePreset(
+    SettingsProvider provider,
+    FilterPreset preset,
+    String action,
+  ) async {
+    if (action == 'apply') {
+      await provider.applyPreset(preset);
+    } else if (action == 'update') {
+      if (await _confirmPresetAction(
+        title: 'Update ${preset.name}?',
+        message: 'Replace this preset with the current filter settings?',
+        confirmLabel: 'Update',
+      )) {
+        await provider.updatePreset(preset.id);
+        if (mounted) _showPresetMessage('Updated “${preset.name}”.');
+      }
+    } else if (action == 'rename') {
+      final name = await _showPresetNameDialog(
+        provider,
+        title: 'Rename preset',
+        initialName: preset.name,
+        excludingId: preset.id,
+      );
+      if (name != null &&
+          await provider.renamePreset(preset.id, name) &&
+          mounted) {
+        _showPresetMessage('Renamed preset to “${name.trim()}”.');
+      }
+    } else if (action == 'delete') {
+      if (await _confirmPresetAction(
+        title: 'Delete ${preset.name}?',
+        message: 'This custom preset will be removed.',
+        confirmLabel: 'Delete',
+      )) {
+        await provider.deletePreset(preset.id);
+        if (mounted) _showPresetMessage('Deleted “${preset.name}”.');
+      }
+    }
+  }
+
+  Future<String?> _showPresetNameDialog(
+    SettingsProvider provider, {
+    required String title,
+    String initialName = '',
+    String? excludingId,
+  }) async {
+    final controller = TextEditingController(text: initialName);
+    String? error;
+    final result = await showDialog<String>(
+      context: context,
+      builder:
+          (dialogContext) => StatefulBuilder(
+            builder: (context, setDialogState) {
+              void submit() {
+                final value = controller.text.trim();
+                if (value.isEmpty) {
+                  setDialogState(() => error = 'Enter a name.');
+                } else if (!provider.isPresetNameAvailable(
+                  value,
+                  excludingId: excludingId,
+                )) {
+                  setDialogState(
+                    () => error = 'A preset with this name already exists.',
+                  );
+                } else {
+                  Navigator.pop(dialogContext, value);
+                }
+              }
+
+              return AlertDialog(
+                title: Text(title),
+                content: TextField(
+                  controller: controller,
+                  autofocus: true,
+                  maxLength: 40,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: InputDecoration(
+                    labelText: 'Preset name',
+                    errorText: error,
+                  ),
+                  onSubmitted: (_) => submit(),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    child: const Text('Cancel'),
+                  ),
+                  FilledButton(onPressed: submit, child: const Text('Save')),
+                ],
+              );
+            },
+          ),
+    );
+    controller.dispose();
+    return result;
+  }
+
+  Future<bool> _confirmPresetAction({
+    required String title,
+    required String message,
+    required String confirmLabel,
+  }) async =>
+      await showDialog<bool>(
+        context: context,
+        builder:
+            (context) => AlertDialog(
+              title: Text(title),
+              content: Text(message),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: Text(confirmLabel),
+                ),
+              ],
+            ),
+      ) ??
+      false;
+
+  void _showPresetMessage(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
+      );
   }
 
   Widget _buildTintColorPicker(SettingsProvider settings) {
@@ -371,9 +570,10 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             IconButton(
               icon: const Icon(Icons.remove_circle_outline, size: 20),
-              onPressed: clamped > min
-                  ? () => onChanged((clamped - step).clamp(min, max))
-                  : null,
+              onPressed:
+                  clamped > min
+                      ? () => onChanged((clamped - step).clamp(min, max))
+                      : null,
             ),
             Expanded(
               child: Slider(
@@ -385,9 +585,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             IconButton(
               icon: const Icon(Icons.add_circle_outline, size: 20),
-              onPressed: clamped < max
-                  ? () => onChanged((clamped + step).clamp(min, max))
-                  : null,
+              onPressed:
+                  clamped < max
+                      ? () => onChanged((clamped + step).clamp(min, max))
+                      : null,
             ),
           ],
         ),
@@ -472,26 +673,28 @@ class _ColorPickerDialogState extends State<_ColorPickerDialog> {
       content: Wrap(
         spacing: 12,
         runSpacing: 12,
-        children: colorOptions.map((color) {
-          final isSelected = selectedColor.toARGB32() == color.toARGB32();
-          return GestureDetector(
-            onTap: () => setState(() => selectedColor = color),
-            child: Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                color: color,
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isSelected
-                      ? Theme.of(context).colorScheme.primary
-                      : Colors.grey.withValues(alpha: 0.4),
-                  width: isSelected ? 3.5 : 1.5,
+        children:
+            colorOptions.map((color) {
+              final isSelected = selectedColor.toARGB32() == color.toARGB32();
+              return GestureDetector(
+                onTap: () => setState(() => selectedColor = color),
+                child: Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color:
+                          isSelected
+                              ? Theme.of(context).colorScheme.primary
+                              : Colors.grey.withValues(alpha: 0.4),
+                      width: isSelected ? 3.5 : 1.5,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-          );
-        }).toList(),
+              );
+            }).toList(),
       ),
       actions: [
         TextButton(
