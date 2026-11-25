@@ -102,7 +102,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ),
           IconButton(
             tooltip: "Reset to defaults",
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const Icon(Icons.restore),
             onPressed: () {
               settings.resetSettings();
               ScaffoldMessenger.of(context).showSnackBar(
