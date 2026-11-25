@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:animetint/components/film_grain_painter.dart';
 import 'package:animetint/controller/settings_provider.dart';
+import 'package:animetint/controller/tile_controller.dart';
 import 'package:animetint/models/filter_preset.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 import 'package:material_ui/material_ui.dart';
@@ -13,17 +14,33 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   bool _isOverlayActive = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _fetchOverlayStatus();
   }
 
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Re-sync when returning to the app: the overlay may have been toggled
+    // from the Quick Settings tile or killed while backgrounded.
+    if (state == AppLifecycleState.resumed) {
+      _fetchOverlayStatus();
+    }
+  }
+
   Future<void> _fetchOverlayStatus() async {
-    bool isActive = await FlutterOverlayWindow.isActive();
+    bool isActive = await TileController.isOverlayActive();
     if (mounted) setState(() => _isOverlayActive = isActive);
   }
 
@@ -46,7 +63,24 @@ class _HomeScreenState extends State<HomeScreen> {
     } else {
       await FlutterOverlayWindow.closeOverlay();
     }
-    if (mounted) setState(() => _isOverlayActive = isEnabled);
+    // Reflect the real native state and refresh the Quick Settings tile.
+    await _fetchOverlayStatus();
+    await TileController.requestTileRefresh();
+  }
+
+  Future<void> _addTile() async {
+    final dispatched = await TileController.requestAddTile();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          dispatched
+              ? "Follow the prompt to add the AnimeTint tile."
+              : "Add the AnimeTint tile from Quick Settings > Edit tiles.",
+        ),
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   @override
@@ -61,6 +95,11 @@ class _HomeScreenState extends State<HomeScreen> {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
+          IconButton(
+            tooltip: "Add Quick Settings tile",
+            icon: const Icon(Icons.dashboard_rounded),
+            onPressed: _addTile,
+          ),
           IconButton(
             tooltip: "Reset to defaults",
             icon: const Icon(Icons.refresh_rounded),
