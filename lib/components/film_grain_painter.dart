@@ -38,16 +38,16 @@ class _ProceduralFilmGrainState extends State<ProceduralFilmGrain>
       vsync: this,
       duration: const Duration(milliseconds: 42),
     )..addStatusListener((status) {
-        if (status == AnimationStatus.completed && mounted && widget.animate) {
-          setState(() {
-            _jitterOffset = Offset(
-              _rng.nextDouble() * 256,
-              _rng.nextDouble() * 256,
-            );
-          });
-          _ticker.forward(from: 0);
-        }
-      });
+      if (status == AnimationStatus.completed && mounted && widget.animate) {
+        setState(() {
+          _jitterOffset = Offset(
+            _rng.nextDouble() * 256,
+            _rng.nextDouble() * 256,
+          );
+        });
+        _ticker.forward(from: 0);
+      }
+    });
 
     if (widget.animate) _ticker.forward();
   }
@@ -74,14 +74,15 @@ class _ProceduralFilmGrainState extends State<ProceduralFilmGrain>
       final int lum = n > 0 ? 255 : 0;
       final int alpha = (n.abs() * 255).clamp(0, 255).toInt();
 
-      pixels[i] = lum;     // R
+      pixels[i] = lum; // R
       pixels[i + 1] = lum; // G
       pixels[i + 2] = lum; // B
       pixels[i + 3] = alpha;
     }
 
-    final ui.ImmutableBuffer buffer =
-        await ui.ImmutableBuffer.fromUint8List(pixels);
+    final ui.ImmutableBuffer buffer = await ui.ImmutableBuffer.fromUint8List(
+      pixels,
+    );
     final ui.ImageDescriptor descriptor = ui.ImageDescriptor.raw(
       buffer,
       width: size,
@@ -152,20 +153,22 @@ class _FilmGrainPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final Matrix4 matrix = Matrix4.identity()
-      ..translate(offset.dx, offset.dy)
-      ..scale(scale, scale);
+    final Matrix4 matrix =
+        Matrix4.identity()
+          ..translateByDouble(offset.dx, offset.dy, 0.0, 1.0)
+          ..scaleByDouble(scale, scale, 1.0, 1.0);
 
-    final Paint paint = Paint()
-      ..shader = ImageShader(
-        tile,
-        TileMode.repeated,
-        TileMode.repeated,
-        matrix.storage,
-      )
-      ..color = Colors.white.withValues(alpha: intensity)
-      ..blendMode = blendMode
-      ..filterQuality = FilterQuality.low;
+    final Paint paint =
+        Paint()
+          ..shader = ImageShader(
+            tile,
+            TileMode.repeated,
+            TileMode.repeated,
+            matrix.storage,
+          )
+          ..color = Colors.white.withValues(alpha: intensity)
+          ..blendMode = blendMode
+          ..filterQuality = FilterQuality.low;
 
     canvas.drawRect(Offset.zero & size, paint);
   }
