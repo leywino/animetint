@@ -10,9 +10,14 @@ import io.flutter.plugin.common.BasicMessageChannel;
 
 public final class WindowSetup {
 
+    // FLAG_LAYOUT_NO_LIMITS lets the overlay draw under the status and navigation bars.
+    private static final int EDGE_TO_EDGE_FLAGS =
+            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN |
+            WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS;
+
     private int height = WindowManager.LayoutParams.MATCH_PARENT;
     private int width = WindowManager.LayoutParams.MATCH_PARENT;
-    private int flag = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+    private int flag = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | EDGE_TO_EDGE_FLAGS;
     private int gravity = Gravity.CENTER;
     private BasicMessageChannel<Object> messenger = null;
     private String overlayTitle = "";
@@ -137,14 +142,14 @@ public final class WindowSetup {
 
     public void setFlag(String name) {
         if (name.equalsIgnoreCase("flagNotFocusable") || name.equalsIgnoreCase("defaultFlag")) {
-            flag = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+            flag = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | EDGE_TO_EDGE_FLAGS;
         }
         if (name.equalsIgnoreCase("flagNotTouchable") || name.equalsIgnoreCase("clickThrough")) {
             flag = WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
-                    WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
+                    EDGE_TO_EDGE_FLAGS;
         }
         if (name.equalsIgnoreCase("flagNotTouchModal") || name.equalsIgnoreCase("focusPointer")) {
-            flag = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
+            flag = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL | EDGE_TO_EDGE_FLAGS;
         }
     }
 

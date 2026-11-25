@@ -207,6 +207,7 @@ public class OverlayService extends Service implements View.OnTouchListener {
                         | WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
                 PixelFormat.TRANSLUCENT
         );
+        applyEdgeToEdgeParams(params);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && windowSetup.getFlag() == clickableFlag) {
             params.alpha = MAXIMUM_OPACITY_ALLOWED_FOR_S_AND_HIGHER;
         }
@@ -276,24 +277,21 @@ public class OverlayService extends Service implements View.OnTouchListener {
 
     private int screenHeight() {
         if (mScreenHeight == -1) {
-            int rawHeight;
+            // Use the full physical display height, including the system bars, so
+            // the overlay can extend edge-to-edge behind them.
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                rawHeight = windowManager.getCurrentWindowMetrics().getBounds().height();
+                mScreenHeight = windowManager.getMaximumWindowMetrics().getBounds().height();
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
                 Display display = windowManager.getDefaultDisplay();
                 DisplayMetrics dm = new DisplayMetrics();
                 display.getRealMetrics(dm);
-                rawHeight = dm.heightPixels;
+                mScreenHeight = dm.heightPixels;
             } else {
                 Display display = windowManager.getDefaultDisplay();
                 DisplayMetrics dm = new DisplayMetrics();
                 display.getMetrics(dm);
-                rawHeight = dm.heightPixels;
+                mScreenHeight = dm.heightPixels;
             }
-            mScreenHeight = inPortrait() ?
-                    rawHeight + statusBarHeightPx() + navigationBarHeightPx()
-                    :
-                    rawHeight + statusBarHeightPx();
         }
         return mScreenHeight;
     }
@@ -327,22 +325,11 @@ public class OverlayService extends Service implements View.OnTouchListener {
     }
 
     /**
-     * Get safe boundaries for overlay positioning that respect system bars
+     * Full display boundaries. The overlay is drawn edge-to-edge, so it is not
+     * constrained to the area left over after the status and navigation bars.
      */
     private int[] getSafeBoundaries() {
-        int screenWidth = szWindow.x;
-        int screenHeight = szWindow.y;
-        int statusBarHeight = statusBarHeightPx();
-        int navigationBarHeight = inPortrait() ? navigationBarHeightPx() : 0;
-
-        // Calculate usable area boundaries
-        int leftBound = 0;
-        int rightBound = screenWidth;
-        int topBound = statusBarHeight; // Account for status bar
-        int bottomBound = screenHeight - navigationBarHeight; // Account for navigation bar
-
-
-        return new int[]{leftBound, topBound, rightBound, bottomBound};
+        return new int[]{0, 0, szWindow.x, szWindow.y};
     }
 
     /**
@@ -495,13 +482,9 @@ public class OverlayService extends Service implements View.OnTouchListener {
 
     private void clampParamsToScreen(WindowManager.LayoutParams params) {
         int[] bounds = getSafeBoundaries();
-        if (fullCoverHeight) {
-            // fullCover explicitly includes the status and navigation bars.
-            bounds[1] = 0;
-            bounds[3] = szWindow.y;
-        }
-        int width = OverlayBounds.resolveSize(params.width, flutterView.getWidth(), bounds[2] - bounds[0]);
-        int height = OverlayBounds.resolveSize(params.height, flutterView.getHeight(), bounds[3] - bounds[1]);
+        // Size against the full physical display, never the system-bar-safe area.
+        int width = OverlayBounds.resolveSize(params.width, flutterView.getWidth(), szWindow.x);
+        int height = OverlayBounds.resolveSize(params.height, flutterView.getHeight(), szWindow.y);
         if (params.width != WindowManager.LayoutParams.WRAP_CONTENT) params.width = width;
         if (params.height != WindowManager.LayoutParams.WRAP_CONTENT) params.height = height;
         int gravity = windowSetup.getGravity();
@@ -513,6 +496,20 @@ public class OverlayService extends Service implements View.OnTouchListener {
         params.y = OverlayBounds.constrainPosition(params.y, height, szWindow.y, bounds[1], bounds[3], vertical);
     }
 
+    /**
+     * Lets the overlay extend under the status and navigation bars. Without
+     * FLAG_LAYOUT_NO_LIMITS the system keeps the window inside the safe area.
+     */
+    private void applyEdgeToEdgeParams(WindowManager.LayoutParams params) {
+        params.flags |= WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
+        params.flags |= WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            // Do not let the system inset the window for system bars.
+            params.setFitInsetsTypes(0);
+            params.setFitInsetsSides(0);
+        }
+    }
+
     private void updateOverlayFlag(MethodChannel.Result result, String flag) {
         if (windowManager != null) {
             windowSetup.setFlag(flag);
@@ -520,6 +517,7 @@ public class OverlayService extends Service implements View.OnTouchListener {
             params.flags = windowSetup.getFlag() | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS |
                     WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN |
                     WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR | WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED;
+            applyEdgeToEdgeParams(params);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && windowSetup.getFlag() == clickableFlag) {
                 params.alpha = MAXIMUM_OPACITY_ALLOWED_FOR_S_AND_HIGHER;
             } else {
@@ -697,6 +695,7 @@ public class OverlayService extends Service implements View.OnTouchListener {
                     | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
                     | WindowManager.LayoutParams.FLAG_LAYOUT_INSET_DECOR
                     | WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED;
+            applyEdgeToEdgeParams(params);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && windowSetup.getFlag() == clickableFlag) {
                 params.alpha = MAXIMUM_OPACITY_ALLOWED_FOR_S_AND_HIGHER;
             } else {
