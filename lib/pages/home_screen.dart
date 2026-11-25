@@ -97,7 +97,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         actions: [
           IconButton(
             tooltip: "Add Quick Settings tile",
-            icon: const Icon(Icons.dashboard_rounded),
+            icon: const Icon(Icons.add_to_home_screen_rounded),
             onPressed: _addTile,
           ),
           IconButton(

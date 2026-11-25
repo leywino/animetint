@@ -24,7 +24,6 @@
             android:icon="@drawable/ic_animetint_qs"
             android:label="@string/tile_label"
             android:description="@string/tile_description"
-            android:settingsActivity=".MainActivity"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE" />
@@ -39,6 +38,18 @@
             android:taskAffinity=""
             android:launchMode="singleInstance"
             android:configChanges="orientation|screenSize|keyboardHidden|uiMode" />
+
+        <activity
+            android:name=".TilePreferencesActivity"
+            android:exported="true"
+            android:theme="@style/TileCollapseTheme"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:configChanges="orientation|screenSize|keyboardHidden|uiMode">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
+            </intent-filter>
+        </activity>
 
         <activity
             android:name=".MainActivity"
